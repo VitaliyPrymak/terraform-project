@@ -1,0 +1,75 @@
+services:
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+    depends_on:
+      - backend_rds
+      - backend_redis
+    networks:
+      - app-network
+
+  backend_rds:
+    build:
+      context: ./backend_rds
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    depends_on:
+      - db
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - CORS_ALLOWED_ORIGINS=http://localhost:4000
+    networks:
+      - app-network
+
+  backend_redis:
+    build:
+      context: ./backend_redis
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    depends_on:
+      - redis
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - CORS_ALLOWED_ORIGINS=http://localhost:8000
+    command: python manage.py runserver 0.0.0.0:8000
+    networks:
+      - app-network
+
+  db:
+    image: postgres:13
+    environment:
+       POSTGRES_USER: myuser
+       POSTGRES_PASSWORD: mypassword
+       POSTGRES_DB: mydatabase
+    ports: 
+      - "5432:5432"
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+ 
+networks:
+    app-network:
+      driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+  db_data:
+    driver: local

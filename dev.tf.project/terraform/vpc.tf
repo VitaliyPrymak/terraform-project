@@ -5,7 +5,6 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Публічні підмережі
 resource "aws_subnet" "public_1" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.0.0/24"
@@ -22,7 +21,6 @@ resource "aws_subnet" "public_2" {
   tags                    = { Name = "public-subnet-2" }
 }
 
-# Приватні підмережі
 resource "aws_subnet" "private_1" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.1.0/24"
@@ -36,3 +34,4 @@ resource "aws_subnet" "private_2" {
   availability_zone = "us-east-1b"
   tags              = { Name = "private-subnet-2" }
 }
+

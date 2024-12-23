@@ -1,5 +1,3 @@
-
-# Security Group для ECS
 resource "aws_security_group" "ecs_sg" {
   name        = "ecs-sg"
   description = "Security group for ECS tasks"
@@ -8,6 +6,13 @@ resource "aws_security_group" "ecs_sg" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+   ingress {
+    from_port   = 4000
+    to_port     = 4000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -24,13 +29,12 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-# Security Group для SSH та HTTP доступу
 resource "aws_security_group" "basic" {
   name        = "basicgroup"
   description = "Allow SSH and HTTP inbound traffic"
   vpc_id      = aws_vpc.main.id
 
-  # Дозвіл на SSH
+
   ingress {
     from_port   = 22
     to_port     = 22
@@ -38,7 +42,7 @@ resource "aws_security_group" "basic" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Дозвіл на HTTP
+
   ingress {
     from_port   = 80
     to_port     = 80
@@ -46,7 +50,6 @@ resource "aws_security_group" "basic" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Вихідний трафік
   egress {
     from_port   = 0
     to_port     = 0

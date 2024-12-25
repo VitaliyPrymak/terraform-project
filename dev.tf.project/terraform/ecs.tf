@@ -22,12 +22,12 @@ resource "aws_ecs_task_definition" "frontend" {
           containerPort = 80
           hostPort      = 80
         }
-        
-      ] 
-       environment = [
-        { name = "BACKEND_RDS_URL", value = "rds-service.backend-local:4000/test_connection/" },
-       { name = "BACKEND_REDIS_URL", value = "redis://redis-service.backend-local:8000" }
-        
+
+      ]
+      environment = [
+        { name = "BACKEND_RDS_URL", value = "http://rds-service.:4000/test_connection/" },
+        { name = "BACKEND_REDIS_URL", value = "http://redis-service:8000/test_connection/"}
+
       ]
       logConfiguration = {
         logDriver = "awslogs"
@@ -47,6 +47,7 @@ resource "aws_ecs_service" "frontend_service" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.frontend.arn
   launch_type     = "FARGATE"
+  desired_count = 1
 
   network_configuration {
     subnets          = [aws_subnet.public_1.id, aws_subnet.public_2.id]
@@ -55,19 +56,23 @@ resource "aws_ecs_service" "frontend_service" {
 
   }
 
-  desired_count = 1
-
-  service_registries {
-  registry_arn = aws_service_discovery_service.frontend_service.arn
-}
-
-
   load_balancer {
     target_group_arn = aws_lb_target_group.frontend.arn
     container_name   = "frontend"
     container_port   = 80
   }
-
+  service_connect_configuration {
+    enabled   = true
+    namespace = aws_service_discovery_http_namespace.application_namespace.arn
+    service {
+      discovery_name = "frontend-service"
+      port_name      = "frontend-port"
+      client_alias {
+        dns_name = "frontend-service"
+        port     = 80
+      }
+    }
+  }
 }
 
 resource "aws_ecs_task_definition" "backend_rds" {
@@ -88,6 +93,7 @@ resource "aws_ecs_task_definition" "backend_rds" {
         {
           containerPort = 4000
           hostPort      = 4000
+          name          = "rds-port"
         }
       ]
       environment = [
@@ -115,6 +121,7 @@ resource "aws_ecs_service" "backend_rds_service" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.backend_rds.arn
   launch_type     = "FARGATE"
+  desired_count = 1
 
   network_configuration {
     subnets          = [aws_subnet.private_1.id, aws_subnet.private_2.id]
@@ -123,11 +130,19 @@ resource "aws_ecs_service" "backend_rds_service" {
 
   }
 
-  desired_count = 1
 
-  service_registries {
-  registry_arn = aws_service_discovery_service.rds_service.arn
-}
+  service_connect_configuration {
+    enabled   = true
+    namespace = aws_service_discovery_http_namespace.application_namespace.arn
+    service {
+      discovery_name = "rds-service"
+      port_name      = "rds-port"
+      client_alias {
+        dns_name = "rds-service"
+        port     = 4000
+      }
+    }
+  }
 
 
 }
@@ -138,7 +153,7 @@ resource "aws_ecs_task_definition" "backend_redis" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-  
+
   task_role_arn      = aws_iam_role.ecs_task_role.arn # ДОДАНО ТУТ
   execution_role_arn = aws_iam_role.ecs_task_execution.arn
 
@@ -151,7 +166,7 @@ resource "aws_ecs_task_definition" "backend_redis" {
         {
           containerPort = 8000
           hostPort      = 8000
-          name = "redis-port"
+          name          = "redis-port"
         }
       ]
       environment = [
@@ -175,7 +190,7 @@ resource "aws_ecs_service" "backend_redis_service" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.backend_redis.arn
   launch_type     = "FARGATE"
-  desired_count = 1
+  desired_count   = 1
 
   enable_execute_command = true
 
@@ -184,10 +199,10 @@ resource "aws_ecs_service" "backend_redis_service" {
     security_groups  = [aws_security_group.ecs_sg.id]
     assign_public_ip = false
   }
-  
+
   service_connect_configuration {
     enabled   = true
-    namespace = aws_service_discovery_private_dns_namespace.backend_namespace.arn
+    namespace = aws_service_discovery_http_namespace.application_namespace.arn
     service {
       discovery_name = "redis-service"
       port_name      = "redis-port"

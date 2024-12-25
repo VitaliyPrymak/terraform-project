@@ -45,7 +45,7 @@ resource "aws_db_instance" "main" {
   engine_version      = "13"
   instance_class      = "db.t3.micro"
   allocated_storage   = 20
-  db_name                = "mydatabase"
+  db_name             = "mydatabase"
   username            = "myuser"
   password            = "mypassword"
   skip_final_snapshot = true

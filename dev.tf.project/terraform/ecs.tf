@@ -25,7 +25,7 @@ resource "aws_ecs_task_definition" "frontend" {
 
       ]
       environment = [
-        { name = "BACKEND_RDS_URL", value = "http://rds-service.:4000/test_connection/" },
+        { name = "BACKEND_RDS_URL", value = "http://rds-service:4000/test_connection/" },
         { name = "BACKEND_REDIS_URL", value = "http://redis-service:8000/test_connection/"}
 
       ]

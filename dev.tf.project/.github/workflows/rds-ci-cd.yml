@@ -2,6 +2,8 @@ name: CI/CD for rds-backend - ECS and ECR
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'backend_rds/**' 
   workflow_dispatch:      

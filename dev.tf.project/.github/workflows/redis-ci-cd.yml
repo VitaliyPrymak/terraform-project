@@ -2,6 +2,8 @@ name: Redis CI/CD
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'backend_redis/**'
   workflow_dispatch:

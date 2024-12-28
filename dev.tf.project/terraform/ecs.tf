@@ -21,11 +21,12 @@ resource "aws_ecs_task_definition" "frontend" {
         {
           containerPort = 80
           hostPort      = 80
+          name = "frontend-port"
         }
 
       ]
       environment = [
-        { name = "BACKEND_RDS_URL", value = "http://rds-service.:4000/test_connection/" },
+        { name = "BACKEND_RDS_URL", value = "http://rds-service:4000/test_connection/" },
         { name = "BACKEND_REDIS_URL", value = "http://redis-service:8000/test_connection/"}
 
       ]
@@ -170,8 +171,8 @@ resource "aws_ecs_task_definition" "backend_redis" {
         }
       ]
       environment = [
-        { name = "REDIS_HOST", value = "redis-service.backend.local" },
-        { name = "REDIS_PORT", value = "8000" }
+        { name = "REDIS_HOST", value = "redis-cluster.soyfzn.0001.use1.cache.amazonaws.com" },
+        { name = "REDIS_PORT", value = "6379" }
       ]
       logConfiguration = {
         logDriver = "awslogs"

@@ -1,0 +1,43 @@
+name: CI/CD for frontend
+
+on:
+  push:
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      CLUSTER_NAME: main-esc-cluster
+      SERVICE_NAME: frontend
+      AWS_REGION: eu-central-1
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & Push Docker image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }} frontend -f frontend/Dockerfile
+          docker push ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: frontend-task-definition.json
+          service: frontend
+          cluster: main-esc-cluster

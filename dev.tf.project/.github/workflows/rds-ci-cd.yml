@@ -1,0 +1,78 @@
+name: CI/CD for rds-backend - ECS and ECR
+
+on:
+  push:
+    paths:
+      - 'backend_rds/**' 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy Docker Image
+    runs-on: ubuntu-latest
+
+    env:
+      CLUSTER_NAME: main-esc-cluster
+      SERVICE_NAME: rds-service
+      AWS_REGION: eu-central-1
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+
+    steps:
+      
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+     
+      - name: Build & Push Docker image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/rds:${{ github.sha }} backend_rds -f backend_rds/Dockerfile
+          docker push ${{ steps.login-ecr.outputs.registry }}/repo/rds:${{ github.sha }}
+
+      
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition rds-task-definition \
+            --query taskDefinition \
+            --output json > task-definition.json
+
+      
+      - name: Debug task definition
+        run: |
+          echo "Task definition content:"
+          cat task-definition.json
+
+      
+      - name: Fill in new image ID in task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: rds
+          image: ${{ steps.login-ecr.outputs.registry }}/repo/rds:${{ github.sha }}
+
+     
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: rds-service
+          cluster: main-esc-cluster
+
+     
+      - name: Update ECS service
+        run: |
+          aws ecs update-service --cluster main-esc-cluster --service rds-service --force-new-deployment --region ${{ env.AWS_REGION }}

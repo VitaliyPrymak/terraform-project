@@ -14,9 +14,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CLUSTER_NAME: main-esc-cluster
+      CLUSTER_NAME: main-ecs-cluster
       SERVICE_NAME: rds-service
-      AWS_REGION: eu-central-1
+      AWS_REGION: us-east-1
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
 
     steps:
@@ -72,10 +72,10 @@ jobs:
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: rds-service
-          cluster: main-esc-cluster
+          cluster: main-ecs-cluster
 
      
       - name: Update ECS service
         run: |
-          aws ecs update-service --cluster main-esc-cluster --service rds-service --force-new-deployment --region ${{ env.AWS_REGION }}
+          aws ecs update-service --cluster main-ecs-cluster --service rds-service --force-new-deployment --region ${{ env.AWS_REGION }}
 

@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CLUSTER_NAME: main-esc-cluster
+      CLUSTER_NAME: main-ecs-cluster
       SERVICE_NAME: frontend
-      AWS_REGION: eu-central-1
+      AWS_REGION: us-east-1
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
 
     steps:
@@ -42,5 +42,5 @@ jobs:
         with:
           task-definition: frontend-task-definition.json
           service: frontend
-          cluster: main-esc-cluster
+          cluster: main-ecs-cluster
 

@@ -18,3 +18,4 @@ EXPOSE 80
 ENV PYTHONUNBUFFERED=1
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:80"]
+

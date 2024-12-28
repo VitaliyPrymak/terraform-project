@@ -17,3 +17,4 @@ COPY . /app/
 EXPOSE 4000
 
 CMD ["sh", "-c", "sleep 10 && python manage.py runserver 0.0.0.0:4000"]
+

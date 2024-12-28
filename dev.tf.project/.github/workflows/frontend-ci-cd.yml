@@ -43,3 +43,4 @@ jobs:
           task-definition: frontend-task-definition.json
           service: frontend
           cluster: main-esc-cluster
+

@@ -78,3 +78,4 @@ jobs:
       - name: Update ECS service
         run: |
           aws ecs update-service --cluster main-esc-cluster --service rds-service --force-new-deployment --region ${{ env.AWS_REGION }}
+

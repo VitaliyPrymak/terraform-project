@@ -34,7 +34,7 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }} frontend -f frontend/Dockerfile
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }} ./frontend -f ./frontend/Dockerfile
           docker push ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }}
 
       - name: Download task definition

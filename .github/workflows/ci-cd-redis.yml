@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'backend_redis/**'
- 
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -15,16 +15,13 @@ jobs:
 
     env:
       CLUSTER_NAME: main-ecs-cluster
-      REDIS_SERVICE_NAME: redis
+      SERVICE_NAME: redis
       AWS_REGION: us-east-1
-      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }} 
 
     steps:
-     
       - name: Checkout code
         uses: actions/checkout@v3
 
-     
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -32,41 +29,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-     
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }} ./backend_redis/backend_redis -f ./backend_redis/backend_redis/Dockerfile
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }} \
+          ./dev.tf.project/backend_redis/backend_redis \
+          -f ./dev.tf.project/backend_redis/backend_redis/Dockerfile
           docker push ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }}
 
-       
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
             --task-definition redis-task-definition \
             --query taskDefinition \
-            --output json > task-definition.json
+            --output json > redis-task-definition.json
 
-       
-      - name: Debug task definition
-        run: |
-          echo "Task definition content:"
-          cat task-definition.json
-
-        
       - name: Fill in new image ID in task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition.json
+          task-definition: redis-task-definition.json
           container-name: redis
           image: ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }}
 
-      
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
@@ -74,6 +62,6 @@ jobs:
           service: redis
           cluster: main-ecs-cluster
 
-      - name: Update ECS service
+      - name: Force ECS Service Update
         run: |
-          aws ecs update-service --cluster main-ecs-cluster --service redis --force-new-deployment --region ${{ env.AWS_REGION }}
+          aws ecs update-service --cluster ${{ env.CLUSTER_NAME }} --service ${{ env.SERVICE_NAME }} --force-new-deployment --region ${{ env.AWS_REGION }}

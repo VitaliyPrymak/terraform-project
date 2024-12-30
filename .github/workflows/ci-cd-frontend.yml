@@ -33,13 +33,11 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build & Push Docker image
-      run: |
-  docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }} \
-  ./dev.tf.project/frontend \
-  -f ./dev.tf.project/frontend/Dockerfile
-  docker push ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }}
-
-
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }} \
+          ./dev.tf.project/frontend \
+          -f ./dev.tf.project/frontend/Dockerfile
+          docker push ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }}
 
       - name: Download task definition
         run: |

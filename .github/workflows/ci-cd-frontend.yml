@@ -1,0 +1,64 @@
+name: CI/CD for frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      CLUSTER_NAME: main-ecs-cluster
+      SERVICE_NAME: frontend
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & Push Docker image
+        run: |
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }} frontend -f frontend/Dockerfile
+          docker push ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }}
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition frontend-task-definition \
+            --query taskDefinition \
+            --output json > frontend-task-definition.json
+
+      - name: Fill in new image ID in task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: frontend-task-definition.json
+          container-name: frontend
+          image: ${{ steps.login-ecr.outputs.registry }}/repo/frontend:${{ github.sha }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: frontend
+          cluster: main-ecs-cluster
+
+      - name: Force ECS Service Update
+        run: |
+          aws ecs update-service --cluster ${{ env.CLUSTER_NAME }} --service ${{ env.SERVICE_NAME }} --force-new-deployment --region ${{ env.AWS_REGION }}

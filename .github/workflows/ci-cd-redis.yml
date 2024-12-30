@@ -40,7 +40,7 @@ jobs:
       
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }} backend_redis -f backend_redis/Dockerfile
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }} ./backend_redis -f ./backend_redis/Dockerfile
           docker push ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }}
 
        

@@ -1,4 +1,3 @@
-
 name: CI/CD for frontend
 
 on:
@@ -36,30 +35,22 @@ jobs:
       - name: Build & Push Docker image
         run: |
           docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} \
-          ./dev-tf-project/frontend \
-          -f ./dev-tf-project/frontend/Dockerfile
+          ./frontend \
+          -f ./frontend/Dockerfile
           docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
 
-      - name: Use local task definition file
-        run: |
-          cp /full/path/to/dev-tf-project/terraform/frontend-task-definition.json frontend-task-definition.json
-
-      - name: Update image in task definition
-        id: render-task
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
         with:
-          task-definition: frontend-task-definition.json
-          container-name: frontend
-          image: ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
+          terraform_version: 1.4.0
 
-      - name: Deploy updated task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.render-task.outputs.task-definition }}
-          cluster: ${{ env.CLUSTER_NAME }}
-          service: ${{ env.SERVICE_NAME }}
+      - name: Terraform Init
+        run: terraform init
 
-      - name: Force new deployment
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      - name: Deploy updated ECS Service
         run: |
           aws ecs update-service \
             --cluster ${{ env.CLUSTER_NAME }} \

@@ -16,6 +16,7 @@ jobs:
       CLUSTER_NAME: main-ecs-cluster
       SERVICE_NAME: frontend
       AWS_REGION: us-east-1
+      ECR_REPOSITORY_URL: "084375565192.dkr.ecr.us-east-1.amazonaws.com/frontend-dev"  # Вказано повне посилання на репозиторій
 
     steps:
       - name: Checkout code
@@ -34,17 +35,17 @@ jobs:
 
       # Debug: Check what outputs are available from the login-ecr step
       - name: Debug login-ecr outputs
-        run: echo "${{ steps.login-ecr.outputs }}"
+        run: echo "${{ steps.login-ecr.outputs.registry }}"
 
       - name: Debug ECR registry
-        run: echo "ECR Registry: ${{ steps.login-ecr.outputs.registry }}"  # Assuming this is the correct output
+        run: echo "ECR Registry: ${{ steps.login-ecr.outputs.registry }}"
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/frontend-dev:${{ github.sha }} \
+          docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} \
           ./dev-tf-project/frontend \
           -f ./dev-tf-project/frontend/Dockerfile
-          docker push ${{ steps.login-ecr.outputs.registry }}/frontend-dev:${{ github.sha }}
+          docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
 
       - name: Download task definition
         run: |
@@ -59,7 +60,7 @@ jobs:
         with:
           task-definition: frontend-task-definition.json
           container-name: frontend
-          image: ${{ steps.login-ecr.outputs.registry }}/frontend-dev:${{ github.sha }}
+          image: ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

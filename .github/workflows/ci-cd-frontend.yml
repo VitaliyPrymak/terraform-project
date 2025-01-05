@@ -16,7 +16,7 @@ jobs:
       CLUSTER_NAME: main-ecs-cluster
       SERVICE_NAME: frontend
       AWS_REGION: us-east-1
-      ECR_REPOSITORY_URL: "084375565192.dkr.ecr.us-east-1.amazonaws.com/frontend-dev"  # Вказано повне посилання на репозиторій
+      ECR_REPOSITORY_URL: "084375565192.dkr.ecr.us-east-1.amazonaws.com/frontend-dev"
 
     steps:
       - name: Checkout code
@@ -36,8 +36,8 @@ jobs:
       - name: Build & Push Docker image
         run: |
           docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} \
-            ./dev-tf-project/frontend \
-            -f ./dev-tf-project/frontend/Dockerfile
+          ./dev-tf-project/frontend \
+          -f ./dev-tf-project/frontend/Dockerfile
           docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
 
       - name: Download task definition
@@ -45,8 +45,21 @@ jobs:
           aws ecs describe-task-definition \
             --task-definition frontend-task \
             --region ${{ env.AWS_REGION }} \
-            --output json > frontend-task-definition.json || echo "Error: Unable to describe task definition"
-            
+            --output json > frontend-task-definition.json
+
+          # Check if containerDefinitions is valid
+          if ! jq '.containerDefinitions' frontend-task-definition.json > /dev/null; then
+            echo "Error: Invalid task definition format or missing containerDefinitions."
+            cat frontend-task-definition.json
+            exit 1
+          fi
+
+      - name: Debug task definition
+        run: |
+          echo "Task Definition Content:"
+          cat frontend-task-definition.json
+          jq '.containerDefinitions' frontend-task-definition.json
+
       - name: Fill in new image ID in task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1

@@ -30,51 +30,36 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} \
-          ./dev-tf-project/frontend \
-          -f ./dev-tf-project/frontend/Dockerfile
+          docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} ./frontend
           docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
 
-      - name: Download task definition
+      - name: Use local task definition file
         run: |
-          aws ecs describe-task-definition \
-            --task-definition frontend-task \
-            --region ${{ env.AWS_REGION }} \
-            --output json > frontend-task-definition.json
+          cp ./terraform/frontend-task-definition.json frontend-task-definition.json
 
-          # Check if containerDefinitions is valid
-          if ! jq '.containerDefinitions' frontend-task-definition.json > /dev/null; then
-            echo "Error: Invalid task definition format or missing containerDefinitions."
-            cat frontend-task-definition.json
-            exit 1
-          fi
-
-      - name: Debug task definition
-        run: |
-          echo "Task Definition Content:"
-          cat frontend-task-definition.json
-          jq '.containerDefinitions' frontend-task-definition.json
-
-      - name: Fill in new image ID in task definition
-        id: task-def
+      - name: Update image in task definition
+        id: render-task
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: frontend-task-definition.json
           container-name: frontend
           image: ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
 
-      - name: Deploy Amazon ECS task definition
+      - name: Deploy updated task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ env.SERVICE_NAME }}
+          task-definition: ${{ steps.render-task.outputs.task-definition }}
           cluster: ${{ env.CLUSTER_NAME }}
+          service: ${{ env.SERVICE_NAME }}
 
-      - name: Force ECS Service Update
+      - name: Force new deployment
         run: |
-          aws ecs update-service --cluster ${{ env.CLUSTER_NAME }} --service ${{ env.SERVICE_NAME }} --force-new-deployment --region ${{ env.AWS_REGION }}
+          aws ecs update-service \
+            --cluster ${{ env.CLUSTER_NAME }} \
+            --service ${{ env.SERVICE_NAME }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }}

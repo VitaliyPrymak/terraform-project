@@ -35,10 +35,10 @@ jobs:
       - name: Build & Push Docker image
         run: |
           docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} \
-          ./frontend \
-          -f ./frontend/Dockerfile
+          ./dev-tf-project/frontend \
+          -f ./dev-tf-project/frontend/Dockerfile
           docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
-
+          
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v1
         with:

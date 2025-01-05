@@ -38,26 +38,33 @@ jobs:
           ./dev-tf-project/frontend \
           -f ./dev-tf-project/frontend/Dockerfile
           docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
-          
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v1
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition frontend-task-definition \
+            --query taskDefinition \
+            --output json > task-definition.json
+
+      - name: Debug task definition
+        run: |
+          echo "Task definition content:"
+          cat task-definition.json
+
+      - name: Fill in new image ID in task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          terraform_version: 1.4.0
+          task-definition: task-definition.json
+          container-name: frontend
+          image: ${{ steps.login-ecr.outputs.registry }}/frontend-dev:${{ github.sha }}
 
-      - name: Terraform Init
-        run: |
-          cd dev-tf-project/terraform  # Перехід до каталогу, де знаходяться файли Terraform
-          terraform init
-
-      - name: Terraform Apply
-        run: |
-          cd dev-tf-project/terraform  # Перехід до каталогу, де знаходяться файли Terraform
-          terraform apply -auto-approve
-
-      - name: Deploy updated ECS Service
-        run: |
-          aws ecs update-service \
-            --cluster ${{ env.CLUSTER_NAME }} \
-            --service ${{ env.SERVICE_NAME }} \
-            --force-new-deployment \
-            --region ${{ env.AWS_REGION }}
+     
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: frontend
+          cluster: main-esc-cluster
+          
+     

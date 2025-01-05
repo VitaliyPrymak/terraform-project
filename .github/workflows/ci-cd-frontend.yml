@@ -42,7 +42,7 @@ jobs:
 
       - name: Use local task definition file
         run: |
-          cp ./terraform/frontend-task-definition.json frontend-task-definition.json
+          cp /full/path/to/dev-tf-project/terraform/frontend-task-definition.json frontend-task-definition.json
 
       - name: Update image in task definition
         id: render-task

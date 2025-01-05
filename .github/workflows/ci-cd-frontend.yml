@@ -1,13 +1,3 @@
-name: CI/CD for frontend
-
-on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'frontend/**'
-  workflow_dispatch:
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -32,15 +22,18 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Debug login-ecr outputs
+        run: echo "${{ steps.login-ecr.outputs }}"
+
       - name: Debug ECR registry
-        run: echo "ECR Registry: ${{ steps.login-ecr.outputs.login-ecr-registry }}"  # Assuming this is the correct output variable
+        run: echo "ECR Registry: ${{ steps.login-ecr.outputs.registry }}"  # Assuming `registry` is the correct output
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.login-ecr-registry }}/frontend-dev:${{ github.sha }} \
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/frontend-dev:${{ github.sha }} \
           ./dev-tf-project/frontend \
           -f ./dev-tf-project/frontend/Dockerfile
-          docker push ${{ steps.login-ecr.outputs.login-ecr-registry }}/frontend-dev:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/frontend-dev:${{ github.sha }}
 
       - name: Download task definition
         run: |
@@ -55,7 +48,7 @@ jobs:
         with:
           task-definition: frontend-task-definition.json
           container-name: frontend
-          image: ${{ steps.login-ecr.outputs.login-ecr-registry }}/frontend-dev:${{ github.sha }}
+          image: ${{ steps.login-ecr.outputs.registry }}/frontend-dev:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

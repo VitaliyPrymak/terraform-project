@@ -36,16 +36,16 @@ jobs:
       - name: Build & Push Docker image
         run: |
           docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} \
-          ./dev-tf-project/frontend \
-          -f ./dev-tf-project/frontend/Dockerfile
+            ./dev-tf-project/frontend \
+            -f ./dev-tf-project/frontend/Dockerfile
           docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
 
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition frontend-task-definition \
-            --query taskDefinition \
-            --output json > frontend-task-definition.json
+            --task-definition arn:aws:ecs:us-east-1:084375565192:task-definition/frontend-task:27 \
+            --region ${{ env.AWS_REGION }} \
+            --output json > frontend-task-definition.json || echo "Error: Unable to describe task definition"
 
       - name: Fill in new image ID in task definition
         id: task-def
@@ -65,4 +65,3 @@ jobs:
       - name: Force ECS Service Update
         run: |
           aws ecs update-service --cluster ${{ env.CLUSTER_NAME }} --service ${{ env.SERVICE_NAME }} --force-new-deployment --region ${{ env.AWS_REGION }}
-          

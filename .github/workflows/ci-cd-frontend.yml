@@ -1,3 +1,13 @@
+name: CI/CD for frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -22,11 +32,12 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
+      # Debug: Check what outputs are available from the login-ecr step
       - name: Debug login-ecr outputs
         run: echo "${{ steps.login-ecr.outputs }}"
 
       - name: Debug ECR registry
-        run: echo "ECR Registry: ${{ steps.login-ecr.outputs.registry }}"  # Assuming `registry` is the correct output
+        run: echo "ECR Registry: ${{ steps.login-ecr.outputs.registry }}"  # Assuming this is the correct output
 
       - name: Build & Push Docker image
         run: |

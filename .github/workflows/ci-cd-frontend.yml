@@ -46,12 +46,12 @@ jobs:
 
       - name: Terraform Init
         run: |
-          cd terraform  # Перехід до папки, де знаходяться файли Terraform
+          cd dev-tf-project/terraform  # Перехід до каталогу, де знаходяться файли Terraform
           terraform init
 
       - name: Terraform Apply
         run: |
-          cd terraform  # Перехід до папки, де знаходяться файли Terraform
+          cd dev-tf-project/terraform  # Перехід до каталогу, де знаходяться файли Terraform
           terraform apply -auto-approve
 
       - name: Deploy updated ECS Service

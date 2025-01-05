@@ -65,10 +65,10 @@ jobs:
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: frontend
-          cluster: main-esc-cluster
+          cluster: main-ecs-cluster
 
       - name: Update ECS service
         run: |
-          aws ecs update-service --cluster main-esc-cluster --service frontend --force-new-deployment --region ${{ env.AWS_REGION }}
+          aws ecs update-service --cluster main-ecs-cluster --service frontend --force-new-deployment --region ${{ env.AWS_REGION }}
           
      

@@ -43,10 +43,10 @@ jobs:
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition arn:aws:ecs:us-east-1:084375565192:task-definition/frontend-task:27 \
+            --task-definition frontend-task \
             --region ${{ env.AWS_REGION }} \
             --output json > frontend-task-definition.json || echo "Error: Unable to describe task definition"
-
+            
       - name: Fill in new image ID in task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1

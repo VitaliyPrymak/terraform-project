@@ -1,4 +1,4 @@
-name: CI/CD for rds-backend - ECS and ECR
+name: CI/CD for RDS Backend
 
 on:
   push:
@@ -10,14 +10,13 @@ on:
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy Docker Image
+    name: Build and Deploy RDS Backend Docker Image
     runs-on: ubuntu-latest
 
     env:
       CLUSTER_NAME: main-ecs-cluster
       SERVICE_NAME: rds-service
       AWS_REGION: us-east-1
-      ECR_REPOSITORY_URL: "084375565192.dkr.ecr.us-east-1.amazonaws.com/backend-rds"
 
     steps:
       - name: Checkout code
@@ -36,15 +35,15 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }} \
-          ./dev-tf-project/backend_rds/backend_rds \
-          -f ./dev-tf-project/backend_rds/backend_rds/Dockerfile
-          docker push ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/rds:${{ github.sha }} \
+          ./dev-tf-project/backend_rds \
+          -f ./dev-tf-project/backend_rds/Dockerfile
+          docker push ${{ steps.login-ecr.outputs.registry }}/repo/rds:${{ github.sha }}
 
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition rds-task \
+            --task-definition backend-rds-task \
             --query taskDefinition \
             --output json > rds-task-definition.json
 
@@ -53,8 +52,8 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: rds-task-definition.json
-          container-name: backend-rds
-          image: ${{ env.ECR_REPOSITORY_URL }}:${{ github.sha }}
+          container-name: rds
+          image: ${{ steps.login-ecr.outputs.registry }}/repo/rds:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

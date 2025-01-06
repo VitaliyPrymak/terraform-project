@@ -52,7 +52,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: rds-task-definition.json
-          container-name: rds
+          container-name: rds-service
           image: ${{ steps.login-ecr.outputs.registry }}/repo/rds:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition

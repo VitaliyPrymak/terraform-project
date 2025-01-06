@@ -1,21 +1,21 @@
-name: CI/CD for Redis Backend
+name: CI/CD for RDS Backend
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'backend_redis/**'
+      - 'backend_rds/**'
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy Redis Backend Docker Image
+    name: Build and Deploy RDS Backend Docker Image
     runs-on: ubuntu-latest
 
     env:
       CLUSTER_NAME: main-ecs-cluster
-      SERVICE_NAME: redis-service
+      SERVICE_NAME: rds-service
       AWS_REGION: us-east-1
 
     steps:
@@ -35,25 +35,25 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/backend-redis-dev:${{ github.sha }} \
-          ./dev-tf-project/backend_redis \
-          -f ./dev-tf-project/backend_redis/Dockerfile
-          docker push ${{ steps.login-ecr.outputs.registry }}/backend-redis-dev:${{ github.sha }}
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/backend-rds-dev:${{ github.sha }} \
+          ./dev-tf-project/backend_rds \
+          -f ./dev-tf-project/backend_rds/Dockerfile
+          docker push ${{ steps.login-ecr.outputs.registry }}/backend-rds-dev:${{ github.sha }}
 
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition backend-redis-task \
+            --task-definition backend-rds-task \
             --query taskDefinition \
-            --output json > redis-task-definition.json
+            --output json > rds-task-definition.json
 
       - name: Fill in new image ID in task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: redis-task-definition.json
-          container-name: redis-service
-          image: ${{ steps.login-ecr.outputs.registry }}/backend-redis-dev:${{ github.sha }}
+          task-definition: rds-task-definition.json
+          container-name: rds-service
+          image: ${{ steps.login-ecr.outputs.registry }}/backend-rds-dev:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1

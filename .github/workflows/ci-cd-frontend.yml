@@ -64,7 +64,7 @@ jobs:
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: frontend
+          service: frontend-service
           cluster: main-ecs-cluster
 
       - name: Update ECS service

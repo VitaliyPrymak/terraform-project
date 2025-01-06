@@ -52,7 +52,7 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: redis-task-definition.json
-          container-name: redis-service
+          container-name: backend_redis
           image: ${{ steps.login-ecr.outputs.registry }}/backend-redis-dev:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition

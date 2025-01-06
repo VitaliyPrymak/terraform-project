@@ -1,4 +1,4 @@
-name: Redis CI/CD
+name: CI/CD for Redis Backend
 
 on:
   push:
@@ -10,12 +10,12 @@ on:
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy Docker Image
+    name: Build and Deploy Redis Backend Docker Image
     runs-on: ubuntu-latest
 
     env:
       CLUSTER_NAME: main-ecs-cluster
-      SERVICE_NAME: redis
+      SERVICE_NAME: redis-service
       AWS_REGION: us-east-1
 
     steps:
@@ -35,15 +35,15 @@ jobs:
 
       - name: Build & Push Docker image
         run: |
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }} \
-          ./dev.tf.project/backend_redis/backend_redis \
-          -f ./dev.tf.project/backend_redis/backend_redis/Dockerfile
-          docker push ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }}
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/backend-redis-dev:${{ github.sha }} \
+          ./dev-tf-project/backend_redis \
+          -f ./dev-tf-project/backend_redis/Dockerfile
+          docker push ${{ steps.login-ecr.outputs.registry }}/backend-redis-dev:${{ github.sha }}
 
       - name: Download task definition
         run: |
           aws ecs describe-task-definition \
-            --task-definition redis-task-definition \
+            --task-definition backend-redis-task \
             --query taskDefinition \
             --output json > redis-task-definition.json
 
@@ -52,15 +52,15 @@ jobs:
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: redis-task-definition.json
-          container-name: redis
-          image: ${{ steps.login-ecr.outputs.registry }}/repo/redis:${{ github.sha }}
+          container-name: redis-service
+          image: ${{ steps.login-ecr.outputs.registry }}/backend-redis-dev:${{ github.sha }}
 
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: redis
-          cluster: main-ecs-cluster
+          service: ${{ env.SERVICE_NAME }}
+          cluster: ${{ env.CLUSTER_NAME }}
 
       - name: Force ECS Service Update
         run: |

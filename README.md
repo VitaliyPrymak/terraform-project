@@ -16,9 +16,38 @@ The setup is scalable, automated, and optimized for high availability.
 
 ## Project Structure
 ```
-ci-cd-frontend.yml
-ci-cd-rds.yml
-ci-cd-redis.yml
+.github/workflows/
+  ├── ci-cd-frontend.yml
+  ├── ci-cd-rds.yml
+  ├── ci-cd-redis.yml
+
+dev-tf-project/
+  ├── backend_rds/
+  │   ├── settings.py
+  │   ├── urls.py
+  │   ├── wsgi.py
+  │   ├── core/
+  │   ├── Dockerfile
+  │   ├── manage.py
+  │   ├── requirements.txt
+  ├── backend_redis/
+  │   ├── settings.py
+  │   ├── urls.py
+  │   ├── wsgi.py
+  │   ├── core/
+  │   ├── Dockerfile
+  │   ├── manage.py
+  │   ├── requirements.txt
+  ├── frontend/
+  │   ├── settings.py
+  │   ├── urls.py
+  │   ├── wsgi.py
+  │   ├── core/
+  │   ├── templates/
+  │   ├── index.html
+  │   ├── Dockerfile
+  │   ├── manage.py
+  │   ├── requirements.txt
 
 terraform/
   ├── alb.tf
@@ -35,27 +64,10 @@ terraform/
   ├── terraform.tfstate.*.backup
   ├── vpc.tf
 
-dev-tf-project/
-  ├── backend_rds/
-  │   ├── core/
-  │   ├── Dockerfile
-  │   ├── manage.py
-  │   ├── requirements.txt
-  ├── backend_redis/
-  │   ├── core/
-  │   ├── Dockerfile
-  │   ├── manage.py
-  │   ├── requirements.txt
-  ├── frontend/
-  │   ├── core/
-  │   ├── templates/
-  │   ├── Dockerfile
-  │   ├── manage.py
-  │   ├── requirements.txt
-
 .env
 .gitignore
 docker-compose.yml
+README.md
 ```
 
 ---
